@@ -47,12 +47,12 @@ find "$PATCH_DIR/src" -name '*.java' -print0 | xargs -0 \
 echo "==> Writing $OUTPUT_JAR"
 cp "$INPUT_JAR" "$OUTPUT_JAR"
 
-# Replace every recompiled class, including the synthetic inner ones
+# Replace every recompiled class, including the inner ones. One at a time and
+# quoted, since some entry names contain a '$'.
 (cd "$CLASSES_DIR" && find . -name '*.class' -printf '%P\n' | sort) > "$BUILD_DIR/classlist.txt"
-jar uf "$OUTPUT_JAR" -C "$CLASSES_DIR" @"$BUILD_DIR/classlist.txt" 2>/dev/null ||
-	while read -r entry; do
-		jar uf "$OUTPUT_JAR" -C "$CLASSES_DIR" "$entry"
-	done < "$BUILD_DIR/classlist.txt"
+while read -r entry; do
+	jar uf "$OUTPUT_JAR" -C "$CLASSES_DIR" "$entry"
+done < "$BUILD_DIR/classlist.txt"
 
 echo "==> Replaced:"
 sed 's/^/    /' "$BUILD_DIR/classlist.txt"

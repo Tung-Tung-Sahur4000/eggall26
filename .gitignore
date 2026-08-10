@@ -1,2 +1,5 @@
 # Downloaded API jars and compiled output from patch/build.sh
 patch/.build/
+
+# Foundation writes this when the test harness exercises its error handling
+error.log

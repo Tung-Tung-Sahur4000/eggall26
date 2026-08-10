@@ -5,6 +5,7 @@ Sources for the two classes replaced inside `EggEmAll2-2.1.1.jar`. See the
 
 ```
 src/dev/shadmage/eggemall/lib/MinecraftVersion.java             Foundation version detection
+src/dev/shadmage/eggemall/lib/remain/CompMaterial$Data.java     CompMaterial's version holder
 src/dev/shadmage/eggemall/lib/remain/nbt/MinecraftVersion.java  bundled NBT-API version table
 admin/plugin.yml                                                every permission declared default: op
 admin/settings.yml                                              stock config plus a RequirePermissions note
@@ -46,6 +47,16 @@ The jar is unsigned, so replacing entries does not invalidate anything.
   class, so any exception becomes an `ExceptionInInitializerError` and the plugin never loads.
 - Adding constants to Foundation's `V` enum is safe: nothing outside the class uses
   `V.values()`, `ordinal()` or `valueOf()`.
+- `CompMaterial$Data.java` is deliberately a top level class with a `$` in its name, which
+  javac accepts, so that it replaces the nested `CompMaterial$Data` on its own and the 1500
+  constant material table in `CompMaterial` is never recompiled. It must keep
+  `static boolean access$000()` and `static int access$100()` exactly as they are —
+  CompMaterial calls the holder only through those two synthetic accessors. It also cannot
+  call `CompMaterial.getMajorVersion`, which is reachable only through a synthetic accessor
+  of its own, so that logic is duplicated there and has to stay in step.
+- Version parsing lives in three places now, each with its own encoding rules. When a new
+  Minecraft scheme appears, grep for `Bukkit.getVersion()`, `getBukkitVersion()` and
+  `getPackage().getName()` across the decompiled jar rather than fixing one at a time.
 - `admin/plugin.yml` must keep `name`, `main`, `version` and `api-version` exactly as the
   original had them. `test/run.sh` parses it with Bukkit's own `PluginDescriptionFile`, the
   same reader the server uses, and fails if any declared permission is not `default: op`.

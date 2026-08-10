@@ -125,7 +125,9 @@ Two further problems sat behind that one:
 
 ## The fix
 
-Two classes are recompiled and replaced. Everything else in the jar is byte for byte the original.
+Three classes are recompiled and replaced. Everything else in the jar is byte for byte the
+original. All three are the same bug in different places: code that assumes a Minecraft
+version looks like `1.X`.
 
 ### `dev/shadmage/eggemall/lib/MinecraftVersion`
 
@@ -141,6 +143,39 @@ Two classes are recompiled and replaced. Everything else in the jar is byte for 
   storm. It logs through `Bukkit.getLogger()` instead.
 - `getFullVersion()` now reports what the server actually said (`26.1.2`) rather than
   rebuilding it from the enum.
+
+### `dev/shadmage/eggemall/lib/remain/CompMaterial$Data`
+
+With the load failure fixed the plugin started, then broke at runtime with a flood of
+`NoClassDefFoundError: Could not initialize class CompMaterial`. Every one of those was a
+cascade from a single root cause:
+
+```
+Caused by: java.lang.NumberFormatException: For input string: ".1"
+	at dev.shadmage.eggemall.lib.remain.CompMaterial$Data.<clinit>(CompMaterial.java:2905)
+```
+
+CompMaterial's version holder read the server version and stripped the leading `1.` with a
+fixed offset:
+
+```java
+VERSION = Integer.parseInt(getMajorVersion(Bukkit.getVersion()).substring(2));
+```
+
+`getMajorVersion` returns `1.21` on the old scheme, and `substring(2)` leaves `21`. On 26.1 it
+returns `26.1`, and `substring(2)` leaves `.1`. Because that dies inside a static
+initializer, the JVM marks CompMaterial permanently unusable — every later touch throws
+`NoClassDefFoundError` for the rest of the server's life. CompMaterial backs the menus, the
+item builder and the spawn egg handling, so the plugin was dead on arrival even though it
+had enabled cleanly.
+
+The holder now reads both parts of the version and applies the same encoding as
+`MinecraftVersion.V`: `1.21` gives 21, `26.1` gives 2601. An unreadable version returns the
+modern default rather than throwing, since throwing here is what bricked the class.
+
+Only `CompMaterial$Data` is replaced. It is compiled as a top level class whose name contains
+a `$`, so CompMaterial itself — including its table of roughly 1500 material constants — is
+left exactly as the author shipped it.
 
 ### `dev/shadmage/eggemall/lib/remain/nbt/MinecraftVersion`
 

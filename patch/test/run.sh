@@ -19,6 +19,10 @@ readonly GUAVA_JAR="$PATCH_DIR/.build/guava.jar"
 readonly GUAVA_URL="https://repo1.maven.org/maven2/com/google/guava/guava/33.3.1-jre/guava-33.3.1-jre.jar"
 readonly SNAKEYAML_JAR="$PATCH_DIR/.build/snakeyaml.jar"
 readonly SNAKEYAML_URL="https://repo1.maven.org/maven2/org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar"
+readonly GSON_JAR="$PATCH_DIR/.build/gson.jar"
+readonly GSON_URL="https://repo1.maven.org/maven2/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar"
+readonly BUNGEE_JAR="$PATCH_DIR/.build/bungeechat.jar"
+readonly BUNGEE_URL="https://repo1.maven.org/maven2/net/md-5/bungeecord-chat/1.16-R0.4/bungeecord-chat-1.16-R0.4.jar"
 
 if [ ! -f "$JAR" ]; then
 	echo "No such jar: $JAR - run patch/build.sh first" >&2
@@ -27,11 +31,13 @@ fi
 
 [ -f "$GUAVA_JAR" ] || curl -sSf -o "$GUAVA_JAR" "$GUAVA_URL"
 [ -f "$SNAKEYAML_JAR" ] || curl -sSf -o "$SNAKEYAML_JAR" "$SNAKEYAML_URL"
+[ -f "$GSON_JAR" ] || curl -sSf -o "$GSON_JAR" "$GSON_URL"
+[ -f "$BUNGEE_JAR" ] || curl -sSf -o "$BUNGEE_JAR" "$BUNGEE_URL"
 
 mkdir -p "$OUT"
 javac -nowarn -encoding UTF-8 -cp "$JAR:$API_JAR" -d "$OUT" "$TEST_DIR"/*.java || exit 1
 
-readonly CP="$OUT:$JAR:$API_JAR:$GUAVA_JAR:$SNAKEYAML_JAR"
+readonly CP="$OUT:$JAR:$API_JAR:$GUAVA_JAR:$SNAKEYAML_JAR:$GSON_JAR:$BUNGEE_JAR"
 failed=0
 
 run() {
@@ -55,6 +61,14 @@ run VersionTest ""                         v26_1            0    26.1
 echo
 echo "== Plugin main class initializes (the failure from the log) =="
 run LoadTest "26.1.2.build.72-stable"
+
+echo
+echo "== CompMaterial initializes (the failure from latest24.log) =="
+#                  Bukkit.getVersion()                  getBukkitVersion()        expected VERSION
+run CompMaterialTest "26.1.2-72-1a6b910 (MC: 26.1.2)"    "26.1.2.build.72-stable"  2601
+run CompMaterialTest "4416-Spigot-2b0b4fe (MC: 1.21.4)"  "1.21.4-R0.1-SNAPSHOT"    21
+run CompMaterialTest "3105-Spigot-8b0b4fe (MC: 1.16.5)"  "1.16.5-R0.1-SNAPSHOT"    16
+run CompMaterialTest "unreadable nonsense"               "garbage"                 2601
 
 echo
 echo "== NBT-API revision detection =="
@@ -96,7 +110,7 @@ if [ -f "$ADMIN_JAR" ]; then
 
 	echo
 	echo "== Administrator build: plugin still initializes =="
-	java -cp "$OUT:$ADMIN_JAR:$API_JAR:$GUAVA_JAR:$SNAKEYAML_JAR" LoadTest "26.1.2.build.72-stable" 2>&1 |
+	java -cp "$OUT:$ADMIN_JAR:$API_JAR:$GUAVA_JAR:$SNAKEYAML_JAR:$GSON_JAR:$BUNGEE_JAR" LoadTest "26.1.2.build.72-stable" 2>&1 |
 		grep -v 'JAVA_TOOL_OPTIONS' || failed=1
 fi
 
