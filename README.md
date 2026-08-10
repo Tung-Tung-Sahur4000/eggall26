@@ -6,14 +6,57 @@ Minecraft 26.1.
 | File | What it is |
 | --- | --- |
 | `EggEmAll2-2.1.1.jar` | The original release, unchanged |
-| `EggEmAll2-2.1.1-mc26-fix.jar` | **Use this one.** Same jar with the version detection fixed |
+| `EggEmAll2-2.1.1-mc26-fix.jar` | The 26.1 compatibility fix |
+| `EggEmAll2-2.1.1-mc26-admin.jar` | **Use this one.** The fix plus an administrator-only permission set |
 | `patch/` | The patched sources, the build script and the checks |
 
 ## Installing
 
-Drop `EggEmAll2-2.1.1-mc26-fix.jar` into `plugins/` and **delete the old
-`EggEmAll2-2.1.1.jar`** — two copies of the same plugin will not load. Configs and
-`data.db` are untouched, so nothing needs migrating.
+Drop one jar into `plugins/` and **delete the old `EggEmAll2-2.1.1.jar`** — two copies of
+the same plugin will not load. Configs and `data.db` are untouched, so nothing needs
+migrating.
+
+## Administrator build
+
+`EggEmAll2-2.1.1-mc26-admin.jar` is the compatibility jar with a rewritten `plugin.yml`.
+Every node is declared explicitly as `default: op`, so nothing is available to a normal
+player until you grant it:
+
+| Permission | Grants |
+| --- | --- |
+| `eggemall.admin` | Everything — all commands and all mob categories |
+| `eggemall.all` | All four catch categories |
+| `eggemall.villagers` | Villagers and wandering traders |
+| `eggemall.aggressive` | Hostile mobs |
+| `eggemall.passive` | Passive creatures |
+| `eggemall.unknown` | Mobs in no other category |
+| `eggemall.command.gui` | `/eggemall menu` |
+| `eggemall.command.reload` | `/eggemall reload` |
+
+The stock jar declared only `eggemall.all` and left the rest undeclared. Those still
+resolved to op through Bukkit's fallback for unregistered permissions, so **this does not
+change who can do what today** — it makes the nodes visible to LuckPerms and other
+permission plugins instead of invisible, and adds `eggemall.admin` as a single node to hand
+to a staff group:
+
+```
+/lp group admin permission set eggemall.admin true
+```
+
+Permissions still work normally, so you can grant narrower access without op — for example
+`/lp group trusted permission set eggemall.passive true`. If you want a lock that no
+permission plugin can override, that needs a code level `isOp()` check, which this build
+deliberately does not do.
+
+The bundled `settings.yml` is unchanged apart from a comment warning that
+`Restrictions.RequirePermissions: false` switches off every permission check. That file is
+only the template for a fresh install; an existing `plugins/EggEmAll2/settings.yml` is left
+alone.
+
+One node cannot be declared because it is built per mob: `eggemall.catchmob.<entity>`, i.e.
+`eggemall.catchmob.zombie`. Bukkit lowercases permission checks, so grant it in lowercase.
+It is undeclared and therefore also op only unless granted, and it is checked *in addition*
+to the category node — either one passing is enough.
 
 ## What was wrong
 
@@ -91,13 +134,14 @@ unchanged, so the `switch` in `MojangToMapping` still lines up.
 ## Rebuilding
 
 ```bash
-./patch/build.sh          # writes EggEmAll2-2.1.1-mc26-fix.jar
-./patch/test/run.sh       # checks the patched jar
+./patch/build.sh          # writes both the -mc26-fix and -mc26-admin jars
+./patch/test/run.sh       # checks them
 ```
 
 `build.sh` compiles the two patched classes to Java 8 bytecode, matching the rest of the jar,
-and swaps them into a copy of the original. It downloads a Bukkit API jar to compile against
-on first run.
+and swaps them into a copy of the original to make the fix jar. It then copies that and
+swaps in `patch/admin/plugin.yml` and `patch/admin/settings.yml` to make the admin jar, which
+is otherwise identical. It downloads a Bukkit API jar to compile against on first run.
 
 `run.sh` feeds a range of version strings through the detection in a fresh JVM each time and
 checks what comes out, including the exact class load that failed on the server. Run it against

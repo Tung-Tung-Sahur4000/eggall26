@@ -1,0 +1,53 @@
+name: EggEmAll2
+version: 2.1.1
+main: dev.shadmage.eggemall2.EggEmAllPlugin
+author: shadmage
+api-version: 1.13
+softdepend: [ CMI, Vault, GriefPrevention, AuthMe, BanManager, BungeeChatAPI, DiscordSRV, Factions, Feudal, ItemsAdder, Essentials, LegacyFactions, Lands, LuckPerms, Multiverse-Core, MVdWPlaceholderAPI, MythicMobs, mcMMO, NashornPlus, Nicky, PlaceholderAPI, ProtocolLib, SimpleClans, Towny, TownyChat, WorldEdit, RoseStacker, UltimateStacker ]
+website: www.dirtydogsa.co.za
+
+# Administrator build. Every node below is declared explicitly as default: op, so
+# nothing is available to a normal player until it is granted deliberately. The
+# stock jar left most of these undeclared, which produced the same result by way
+# of Bukkit's op fallback but kept the nodes invisible to permission plugins.
+#
+# Grant eggemall.admin to a staff group for full access, or hand out the
+# individual catch nodes for narrower access.
+#
+# Not listed here because it is generated per mob: eggemall.catchmob.<entity>,
+# i.e. eggemall.catchmob.zombie. Bukkit lowercases permission checks, so grant it
+# lowercase. It is undeclared and therefore also op only unless granted.
+permissions:
+  eggemall.admin:
+    description: Full access to EggEmAll2 - every command and every mob category.
+    default: op
+    children:
+      eggemall.all: true
+      eggemall.command.gui: true
+      eggemall.command.reload: true
+  eggemall.all:
+    description: Gives access to catch all types of mobs.
+    default: op
+    children:
+      eggemall.villagers: true
+      eggemall.aggressive: true
+      eggemall.passive: true
+      eggemall.unknown: true
+  eggemall.villagers:
+    description: Catch villagers and wandering traders.
+    default: op
+  eggemall.aggressive:
+    description: Catch hostile mobs.
+    default: op
+  eggemall.passive:
+    description: Catch passive creatures.
+    default: op
+  eggemall.unknown:
+    description: Catch mobs that fall into no other category.
+    default: op
+  eggemall.command.gui:
+    description: Use /eggemall menu.
+    default: op
+  eggemall.command.reload:
+    description: Use /eggemall reload.
+    default: op

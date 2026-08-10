@@ -14,9 +14,11 @@ readonly JAR="${1:-$ROOT_DIR/EggEmAll2-2.1.1-mc26-fix.jar}"
 readonly API_JAR="$PATCH_DIR/.build/spigot-api.jar"
 readonly OUT="$PATCH_DIR/.build/test-classes"
 
-# Bukkit expects Guava on the classpath, the server provides it at runtime
+# Bukkit expects Guava and SnakeYAML on the classpath, the server provides both at runtime
 readonly GUAVA_JAR="$PATCH_DIR/.build/guava.jar"
 readonly GUAVA_URL="https://repo1.maven.org/maven2/com/google/guava/guava/33.3.1-jre/guava-33.3.1-jre.jar"
+readonly SNAKEYAML_JAR="$PATCH_DIR/.build/snakeyaml.jar"
+readonly SNAKEYAML_URL="https://repo1.maven.org/maven2/org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar"
 
 if [ ! -f "$JAR" ]; then
 	echo "No such jar: $JAR - run patch/build.sh first" >&2
@@ -24,11 +26,12 @@ if [ ! -f "$JAR" ]; then
 fi
 
 [ -f "$GUAVA_JAR" ] || curl -sSf -o "$GUAVA_JAR" "$GUAVA_URL"
+[ -f "$SNAKEYAML_JAR" ] || curl -sSf -o "$SNAKEYAML_JAR" "$SNAKEYAML_URL"
 
 mkdir -p "$OUT"
 javac -nowarn -encoding UTF-8 -cp "$JAR:$API_JAR" -d "$OUT" "$TEST_DIR"/*.java || exit 1
 
-readonly CP="$OUT:$JAR:$API_JAR:$GUAVA_JAR"
+readonly CP="$OUT:$JAR:$API_JAR:$GUAVA_JAR:$SNAKEYAML_JAR"
 failed=0
 
 run() {
@@ -58,6 +61,21 @@ echo "== NBT-API revision detection =="
 run dev.shadmage.eggemall.lib.remain.nbt.NbtVersionTest "26.1.2.build.72-stable" MC1_21_R5
 run dev.shadmage.eggemall.lib.remain.nbt.NbtVersionTest "1.21.4-R0.1-SNAPSHOT"   MC1_21_R3
 run dev.shadmage.eggemall.lib.remain.nbt.NbtVersionTest "1.20.1-R0.1-SNAPSHOT"   MC1_20_R1
+
+readonly ADMIN_JAR="$ROOT_DIR/EggEmAll2-2.1.1-mc26-admin.jar"
+
+if [ -f "$ADMIN_JAR" ]; then
+	echo
+	echo "== Administrator build: plugin.yml parsed by Bukkit's own reader =="
+	run PluginYmlTest "$ADMIN_JAR" \
+		eggemall.admin eggemall.all eggemall.villagers eggemall.aggressive \
+		eggemall.passive eggemall.unknown eggemall.command.gui eggemall.command.reload
+
+	echo
+	echo "== Administrator build: plugin still initializes =="
+	java -cp "$OUT:$ADMIN_JAR:$API_JAR:$GUAVA_JAR:$SNAKEYAML_JAR" LoadTest "26.1.2.build.72-stable" 2>&1 |
+		grep -v 'JAVA_TOOL_OPTIONS' || failed=1
+fi
 
 echo
 if [ "$failed" -eq 0 ]; then

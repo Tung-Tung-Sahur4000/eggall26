@@ -1,0 +1,88 @@
+# !-----------------------------------------------------------------------------------------------!
+#                       Welcome to the main configuration of EggEmAll2
+# !-----------------------------------------------------------------------------------------------!
+Version: 1
+LogPrefix: "&8[&aEggEmAll&8]"
+ChatPrefix: "&8[&aEggEmAll&8]"
+Log_Lag_Over_Millis: 100
+Debug: [ ]
+Command_Aliases: [ eggemall ]
+
+# Blacklist / Whitelist worlds where you would like this plugin to allow
+# or disable entity catching using chicken eggs
+BlacklistWorlds:
+  AsWhitelist: false
+  Worlds:
+    - blacklisted_world
+# Options relating to particle effects
+Particles:
+  EggTrails: true
+  PlayerThrowOnly: true
+  ExplosionOnSuccess: true
+  # This only happens if CatchChance->RemoveEntityOnFail is set to true
+  SmokeOnEscape: true
+
+CatchChance:
+  ChancePercentage: 100
+  SpawnChickenOnFail: true
+  RemoveEntityOnFail: true
+  # Only applicable when a player throws the egg
+  AddLoreToSpawnEgg: true
+  # Supports placeholders
+  # -> {player} = Name of the player that caught the mob
+  # -> {entity} = The type of entity
+  # -> {entity_name} = The name of the mob if it had a custom name, or the entity type/profession if not
+  # -> {profession} = if the mob is a villager with a profession, if not or no profession will be blank
+  Lore_Lines:
+    - '&9{entity_name}'
+    - '&9Captured by: &e&l{player}'
+
+Restrictions:
+  OnlyAllowPlayerThrownEggs: true
+  PreventCatchingBabyEntities: true
+  PreventCatchingTamedEntities: true
+  PreventCatchingShearedSheep: true
+  PreventCatchingNamedEntities: true
+  # Administrator build: leave this true. Setting it to false switches off every
+  # permission check and lets any player on the server catch mobs.
+  RequirePermissions: true
+  # Which entities do you want to block from being captured?
+  # p.s. you cannot catch an entity that does not have a default spawn egg item
+  EntityBlacklist:
+    - ENDER_DRAGON
+    - WITHER
+    - ELDER_GUARDIAN
+    - WARDEN
+    - EVOKER
+    - VEX
+    - GHAST
+    - SHULKER
+    - RAVAGER
+    - TADPOLE
+
+EntityInventories:
+  DeleteInventoryOnCatch: true
+
+# Save entity meta data
+NBT:
+  MaintainEntityDataValues: true
+
+GUI:
+  Title: "&9&l&oEgg Em All"
+  CatchableEntitiesTitle: "&2&l&oCatchable Entities"
+  BlacklistedEntitiesTitle: "&c&l&oBlacklisted Entities"
+
+Messages:
+  NoPermissions: "Sorry you don't have permission to catch {entity}"
+  NotCatchable: "Sorry, {entity} cannot be caught"
+  CatchSuccess: "&2Congrats you got the {entity} spawn egg!"
+  CatchFailedChance: "&c&oOh No! &6&oLooks like that {entity} got away. Better luck next time..."
+  NoBabies: "Sorry, you cannot catch baby entities"
+  NoTamed: "Sorry, you cannot catch tamed entities"
+  NoShearedSheep: "Sorry, you cannot catch sheared sheep"
+  NoNamedEntities: "Sorry, you cannot catch named entities"
+  BlacklistedWorld: "Sorry, you cannot catch entities in world: {world}"
+
+General:
+  # On server start/plugin reload show plugin details in the console
+  StartupConsoleStats: true

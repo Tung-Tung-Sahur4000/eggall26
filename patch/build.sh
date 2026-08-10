@@ -14,6 +14,9 @@ readonly ROOT_DIR="$(dirname "$PATCH_DIR")"
 readonly INPUT_JAR="${1:-$ROOT_DIR/EggEmAll2-2.1.1.jar}"
 readonly OUTPUT_JAR="${2:-$ROOT_DIR/EggEmAll2-2.1.1-mc26-fix.jar}"
 
+# Second output: the same jar with every permission declared default: op
+readonly ADMIN_JAR="${3:-$ROOT_DIR/EggEmAll2-2.1.1-mc26-admin.jar}"
+
 readonly BUILD_DIR="$PATCH_DIR/.build"
 readonly CLASSES_DIR="$BUILD_DIR/classes"
 
@@ -53,3 +56,12 @@ jar uf "$OUTPUT_JAR" -C "$CLASSES_DIR" @"$BUILD_DIR/classlist.txt" 2>/dev/null |
 
 echo "==> Replaced:"
 sed 's/^/    /' "$BUILD_DIR/classlist.txt"
+
+echo "==> Writing $ADMIN_JAR"
+cp "$OUTPUT_JAR" "$ADMIN_JAR"
+jar uf "$ADMIN_JAR" -C "$PATCH_DIR/admin" plugin.yml
+jar uf "$ADMIN_JAR" -C "$PATCH_DIR/admin" settings.yml
+
+echo "==> Replaced:"
+echo "    plugin.yml"
+echo "    settings.yml"
