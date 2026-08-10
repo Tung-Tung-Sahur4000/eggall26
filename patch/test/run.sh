@@ -72,6 +72,29 @@ if [ -f "$ADMIN_JAR" ]; then
 		eggemall.passive eggemall.unknown eggemall.command.gui eggemall.command.reload
 
 	echo
+	echo "== Administrator build: RequirePermissions is enforced =="
+	# The config key must still be read so it survives in settings.yml, but the field
+	# must be assigned Boolean.TRUE with no branch in between
+	seq="$(javap -c -p -cp "$ADMIN_JAR" 'dev.shadmage.eggemall2.Settings.Settings$Restrictions' 2>/dev/null |
+		grep -A5 'String RequirePermissions' | grep -oE 'Boolean\.TRUE|REQUIRE_PERMISSIONS|if[a-z]+|goto' | tr '\n' ' ')"
+
+	if [ "$seq" = "Boolean.TRUE REQUIRE_PERMISSIONS " ]; then
+		echo "PASS  REQUIRE_PERMISSIONS assigned Boolean.TRUE unconditionally (no branch)"
+	else
+		echo "FAIL  unexpected bytecode after reading RequirePermissions: [$seq]"
+		failed=1
+	fi
+
+	# and the plain compatibility jar must still honour the config
+	if javap -c -p -cp "$JAR" 'dev.shadmage.eggemall2.Settings.Settings$Restrictions' 2>/dev/null |
+		grep -A5 'String RequirePermissions' | grep -q 'Boolean.TRUE'; then
+		echo "FAIL  the compatibility jar should read RequirePermissions from the config"
+		failed=1
+	else
+		echo "PASS  compatibility jar still reads RequirePermissions from the config"
+	fi
+
+	echo
 	echo "== Administrator build: plugin still initializes =="
 	java -cp "$OUT:$ADMIN_JAR:$API_JAR:$GUAVA_JAR:$SNAKEYAML_JAR" LoadTest "26.1.2.build.72-stable" 2>&1 |
 		grep -v 'JAVA_TOOL_OPTIONS' || failed=1

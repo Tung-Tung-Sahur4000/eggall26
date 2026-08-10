@@ -48,10 +48,33 @@ Permissions still work normally, so you can grant narrower access without op —
 permission plugin can override, that needs a code level `isOp()` check, which this build
 deliberately does not do.
 
-The bundled `settings.yml` is unchanged apart from a comment warning that
-`Restrictions.RequirePermissions: false` switches off every permission check. That file is
-only the template for a fresh install; an existing `plugins/EggEmAll2/settings.yml` is left
-alone.
+### Permission checks are enforced
+
+In the stock plugin, `Restrictions.RequirePermissions: false` in `settings.yml` bypasses the
+permission system entirely and lets **every** player catch mobs — the check is
+`if (REQUIRE_PERMISSIONS && !hasPermission(group) && !hasPermission(mobSpecific))`, so
+turning it off short circuits the whole thing.
+
+In this build that switch is disabled. `Settings.Restrictions.init()` still reads the key,
+so it stays in your `settings.yml` and the config updater leaves it alone, but the value is
+discarded and the field is always `true`:
+
+```
+60: ldc           // String RequirePermissions
+62: invokestatic  // Settings.getBoolean(String)
+65: pop                                             <- value read, then thrown away
+66: getstatic     // Boolean.TRUE
+69: putstatic     // REQUIRE_PERMISSIONS
+```
+
+No branch, so there is no config, reload or permission plugin path that turns permission
+checks off. This is the only behavioural change; every other restriction in `settings.yml`
+still works exactly as before, since those are gameplay choices rather than access control.
+
+The bundled `settings.yml` is byte identical to the original apart from the comment above
+that key. That file is only the template for a fresh install; an existing
+`plugins/EggEmAll2/settings.yml` is left alone — which is precisely why the enforcement is
+in code rather than in the config.
 
 One node cannot be declared because it is built per mob: `eggemall.catchmob.<entity>`, i.e.
 `eggemall.catchmob.zombie`. Bukkit lowercases permission checks, so grant it in lowercase.

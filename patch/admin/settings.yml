@@ -43,8 +43,8 @@ Restrictions:
   PreventCatchingTamedEntities: true
   PreventCatchingShearedSheep: true
   PreventCatchingNamedEntities: true
-  # Administrator build: leave this true. Setting it to false switches off every
-  # permission check and lets any player on the server catch mobs.
+  # Administrator build: this is enforced. The value here is ignored and permission
+  # checks always apply, so setting it to false cannot open catching up to everyone.
   RequirePermissions: true
   # Which entities do you want to block from being captured?
   # p.s. you cannot catch an entity that does not have a default spawn egg item

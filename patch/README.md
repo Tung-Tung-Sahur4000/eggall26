@@ -7,14 +7,22 @@ Sources for the two classes replaced inside `EggEmAll2-2.1.1.jar`. See the
 src/dev/shadmage/eggemall/lib/MinecraftVersion.java             Foundation version detection
 src/dev/shadmage/eggemall/lib/remain/nbt/MinecraftVersion.java  bundled NBT-API version table
 admin/plugin.yml                                                every permission declared default: op
-admin/settings.yml                                              stock config plus a RequirePermissions warning
+admin/settings.yml                                              stock config plus a RequirePermissions note
+admin/src/dev/shadmage/eggemall2/Settings/Settings.java         forces RequirePermissions on
 build.sh                                                        recompile and repack both jars
 test/run.sh                                                     check the result
 ```
 
-`build.sh` produces two jars: `-mc26-fix` is the compatibility fix alone, `-mc26-admin` is
-that same jar with the two files from `admin/` swapped in. Nothing else differs between
-them, which `test/run.sh` and a `diff -rq` of the extracted jars both confirm.
+`build.sh` produces two jars. `-mc26-fix` is the compatibility fix alone, compiled from
+`src/`. `-mc26-admin` is a copy of that with `admin/plugin.yml`, `admin/settings.yml` and the
+classes compiled from `admin/src/` swapped in — nothing else differs, which `test/run.sh`
+and a `diff -rq` of the extracted jars both confirm.
+
+`admin/src/.../Settings.java` is the decompiled original with one change: the value read from
+`RequirePermissions` is discarded and the field is set to `Boolean.TRUE`. The `getBoolean`
+call is kept so the key stays in `settings.yml`. `test/run.sh` asserts the resulting bytecode
+has no branch between reading the key and the assignment, and that the compatibility jar
+still reads it normally.
 
 The plugin ships without sources, so both files were recovered by decompiling the jar
 (CFR 0.152) and edited from there. That is why they read like decompiler output in places —
@@ -43,3 +51,8 @@ The jar is unsigned, so replacing entries does not invalidate anything.
   same reader the server uses, and fails if any declared permission is not `default: op`.
 - `admin/settings.yml` is CRLF, like the file it came from. Only comments were added; no
   value was changed.
+- Recompiling `Settings.java` renumbers the synthetic `access$NNNN` bridge methods javac
+  generates for the nested config classes. That is safe here because those bridges are only
+  ever called from within `Settings.java` itself — verified by disassembling every class in
+  the jar that references `Settings` and finding no external `Settings.access$` call. Redo
+  that check if the override ever grows beyond this file.
