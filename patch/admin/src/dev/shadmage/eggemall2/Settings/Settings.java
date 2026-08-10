@@ -90,6 +90,7 @@ extends SimpleSettings {
         public static Boolean PREVENT_CATCHING_SHEARED_SHEEP;
         public static Boolean PREVENT_CATCHING_NAMED_ENTITIES;
         public static Boolean REQUIRE_PERMISSIONS;
+        public static Boolean KEEP_ORIGINAL_ON_CATCH;
         public static List<EntityType> BLACKLISTED_ENTITIES;
 
         private static void init() {
@@ -104,6 +105,9 @@ extends SimpleSettings {
             // value is discarded - setting it to false cannot open catching up to everyone.
             Settings.getBoolean("RequirePermissions");
             REQUIRE_PERMISSIONS = Boolean.TRUE;
+            // Clone mode. Defaults to on when the key is absent, so an existing
+            // settings.yml written by an older build still gets the new behaviour.
+            KEEP_ORIGINAL_ON_CATCH = Common.getOrDefault(Settings.getBoolean("KeepOriginalOnCatch"), Boolean.TRUE);
             BLACKLISTED_ENTITIES = Settings.getList("EntityBlacklist", EntityType.class);
         }
     }

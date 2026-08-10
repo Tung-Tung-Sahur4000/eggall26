@@ -62,10 +62,31 @@ readonly ADMIN_CLASSES_DIR="$BUILD_DIR/admin-classes"
 rm -rf "$ADMIN_CLASSES_DIR"
 mkdir -p "$ADMIN_CLASSES_DIR"
 
+# EggListener uses ItemStack#getPersistentDataContainer, which is Paper only, so these
+# compile against paper-api. Adventure comes with it because Paper's Server extends
+# ForwardingAudience.
+readonly PAPER_JAR="$BUILD_DIR/paper-api.jar"
+readonly PAPER_BASE="https://repo.papermc.io/repository/maven-public/io/papermc/paper/paper-api/1.21.4-R0.1-SNAPSHOT"
+readonly ADVENTURE_JARS="$BUILD_DIR/adventure-api-4.17.0.jar:$BUILD_DIR/adventure-key-4.17.0.jar:$BUILD_DIR/examination-api-1.3.0.jar"
+
+if [ ! -f "$PAPER_JAR" ]; then
+	echo "==> Downloading Paper API"
+
+	snapshot="$(curl -sSf "$PAPER_BASE/maven-metadata.xml" | grep -o '<value>[^<]*</value>' | head -1 | sed 's/<[^>]*>//g')"
+	curl -sSf -o "$PAPER_JAR" "$PAPER_BASE/paper-api-${snapshot}.jar"
+
+	for artifact in \
+		net/kyori/adventure-api/4.17.0/adventure-api-4.17.0.jar \
+		net/kyori/adventure-key/4.17.0/adventure-key-4.17.0.jar \
+		net/kyori/examination-api/1.3.0/examination-api-1.3.0.jar; do
+		curl -sSf -o "$BUILD_DIR/$(basename "$artifact")" "https://repo1.maven.org/maven2/$artifact"
+	done
+fi
+
 # Compiled against the fix jar so the overrides see the already patched classes
 find "$PATCH_DIR/admin/src" -name '*.java' -print0 | xargs -0 \
 	javac -nowarn -encoding UTF-8 --release 8 \
-		-cp "$OUTPUT_JAR:$API_JAR" \
+		-cp "$OUTPUT_JAR:$PAPER_JAR:$ADVENTURE_JARS" \
 		-d "$ADMIN_CLASSES_DIR"
 
 echo "==> Writing $ADMIN_JAR"

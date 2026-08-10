@@ -9,7 +9,8 @@ src/dev/shadmage/eggemall/lib/remain/CompMaterial$Data.java     CompMaterial's v
 src/dev/shadmage/eggemall/lib/remain/nbt/MinecraftVersion.java  bundled NBT-API version table
 admin/plugin.yml                                                every permission declared default: op
 admin/settings.yml                                              stock config plus a RequirePermissions note
-admin/src/dev/shadmage/eggemall2/Settings/Settings.java         forces RequirePermissions on
+admin/src/dev/shadmage/eggemall2/Settings/Settings.java         forces RequirePermissions on, adds the clone flag
+admin/src/dev/shadmage/eggemall2/Events/EggListener.java        clone mode: keep the original mob
 build.sh                                                        recompile and repack both jars
 test/run.sh                                                     check the result
 ```
@@ -60,8 +61,15 @@ The jar is unsigned, so replacing entries does not invalidate anything.
 - `admin/plugin.yml` must keep `name`, `main`, `version` and `api-version` exactly as the
   original had them. `test/run.sh` parses it with Bukkit's own `PluginDescriptionFile`, the
   same reader the server uses, and fails if any declared permission is not `default: op`.
-- `admin/settings.yml` is CRLF, like the file it came from. Only comments were added; no
-  value was changed.
+- `admin/settings.yml` is CRLF, like the file it came from. Apart from the added
+  `KeepOriginalOnCatch` key, only comments were added; no existing value was changed.
+- `EggListener.java` needs **paper-api** to compile, not spigot-api: it calls
+  `ItemStack#getPersistentDataContainer()`, which is Paper only. Paper's `Server` extends
+  Adventure's `ForwardingAudience`, so the Adventure jars are on that classpath too.
+  `build.sh` keeps the two compiles separate for this reason.
+- New settings keys are read with `Common.getOrDefault(Settings.getBoolean(...), default)`,
+  matching how `ChancePercentage` already handles a missing key. Reading a new key directly
+  returns null and NPEs on an existing settings.yml that predates the key.
 - Recompiling `Settings.java` renumbers the synthetic `access$NNNN` bridge methods javac
   generates for the nested config classes. That is safe here because those bridges are only
   ever called from within `Settings.java` itself — verified by disassembling every class in

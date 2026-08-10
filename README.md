@@ -48,6 +48,28 @@ Permissions still work normally, so you can grant narrower access without op —
 permission plugin can override, that needs a code level `isOp()` check, which this build
 deliberately does not do.
 
+### Clone mode
+
+Hitting a mob gives you the captured spawn egg and **leaves the original standing where it
+is**, like pick block. The stock plugin removed the mob on capture.
+
+```yaml
+Restrictions:
+  KeepOriginalOnCatch: true    # false restores the stock behaviour
+```
+
+The flag defaults to `true` when the key is absent, so an existing `settings.yml` written by
+an older build picks the new behaviour up without being edited.
+
+It gates two things in `EggListener`. `targetEntity.remove()` is skipped, and so is the
+inventory dump that `DeleteInventoryOnCatch: false` would otherwise do — dropping a mob's
+inventory on the floor while the mob is still holding it would duplicate the items. The egg
+still drops either way.
+
+Worth knowing: a captured mob can now be copied without limit. Every throw at the same
+librarian yields another egg carrying its trades. That is what pick block behaviour means,
+but it is worth thinking about before handing the permission to anyone but staff.
+
 ### Permission checks are enforced
 
 In the stock plugin, `Restrictions.RequirePermissions: false` in `settings.yml` bypasses the

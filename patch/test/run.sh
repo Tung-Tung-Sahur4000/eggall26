@@ -109,6 +109,44 @@ if [ -f "$ADMIN_JAR" ]; then
 	fi
 
 	echo
+	echo "== Administrator build: clone mode =="
+	# Entity.remove must sit behind a branch on the flag. Find the local the flag is
+	# stored into, then check an iload/ifne on it precedes the first Entity.remove.
+	disasm="$(javap -c -p -cp "$ADMIN_JAR" dev.shadmage.eggemall2.Events.EggListener 2>/dev/null)"
+	slot="$(printf '%s\n' "$disasm" | grep -A3 'getstatic.*KEEP_ORIGINAL_ON_CATCH' |
+		grep -oE 'istore +[0-9]+' | head -1 | grep -oE '[0-9]+')"
+
+	guard="$(printf '%s\n' "$disasm" | awk -v slot="$slot" '
+		index($0, "KEEP_ORIGINAL_ON_CATCH") { seen = 1 }
+		seen && $0 ~ ("iload +" slot "[[:space:]]*$") { gate = 1; next }
+		seen && gate && /ifne/ { guarded = 1; gate = 0; next }
+		seen && /Entity\.remove/ { print (guarded ? "GUARDED" : "UNGUARDED"); exit }')"
+
+	if [ "$guard" = "GUARDED" ] && [ -n "$slot" ]; then
+		echo "PASS  Entity.remove is gated behind the flag (local $slot), the egg still drops"
+	else
+		echo "FAIL  Entity.remove is not guarded by KEEP_ORIGINAL_ON_CATCH [slot=$slot guard=$guard]"
+		failed=1
+	fi
+
+	if javap -p -cp "$ADMIN_JAR" 'dev.shadmage.eggemall2.Settings.Settings$Restrictions' 2>/dev/null |
+		grep -q 'KEEP_ORIGINAL_ON_CATCH'; then
+		echo "PASS  Restrictions exposes KEEP_ORIGINAL_ON_CATCH"
+	else
+		echo "FAIL  Restrictions is missing KEEP_ORIGINAL_ON_CATCH"
+		failed=1
+	fi
+
+	# the plain compatibility jar keeps the stock capture behaviour
+	if javap -c -p -cp "$JAR" dev.shadmage.eggemall2.Events.EggListener 2>/dev/null |
+		grep -q 'KEEP_ORIGINAL_ON_CATCH'; then
+		echo "FAIL  clone mode leaked into the compatibility jar"
+		failed=1
+	else
+		echo "PASS  compatibility jar keeps the stock capture behaviour"
+	fi
+
+	echo
 	echo "== Administrator build: plugin still initializes =="
 	java -cp "$OUT:$ADMIN_JAR:$API_JAR:$GUAVA_JAR:$SNAKEYAML_JAR:$GSON_JAR:$BUNGEE_JAR" LoadTest "26.1.2.build.72-stable" 2>&1 |
 		grep -v 'JAVA_TOOL_OPTIONS' || failed=1

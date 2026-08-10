@@ -46,6 +46,10 @@ Restrictions:
   # Administrator build: this is enforced. The value here is ignored and permission
   # checks always apply, so setting it to false cannot open catching up to everyone.
   RequirePermissions: true
+  # Clone mode. When true, hitting a mob with an egg gives you the captured spawn
+  # egg and leaves the original mob standing where it is, like pick block. Set to
+  # false for the original behaviour, where the mob is removed when captured.
+  KeepOriginalOnCatch: true
   # Which entities do you want to block from being captured?
   # p.s. you cannot catch an entity that does not have a default spawn egg item
   EntityBlacklist:
